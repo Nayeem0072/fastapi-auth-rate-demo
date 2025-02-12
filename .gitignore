@@ -104,4 +104,8 @@ cover/
 Thumbs.db
 *.swp
 *.swo
-*~ 
+*~
+
+# Uploaded files
+uploads/
+*.zip 

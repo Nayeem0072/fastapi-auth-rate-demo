@@ -149,3 +149,32 @@ The backend service stores uploaded files in:
   - Upload timestamp
   - Upload status
 
+## API Documentation
+
+### Swagger UI
+The API documentation is available via Swagger UI at `http://localhost:8000/docs`. The interactive documentation includes:
+
+#### Endpoint Groups
+- 🔒 **Authentication**
+  - POST `/token` - Get JWT access token
+- 👥 **Users**
+  - GET `/api/users` - Get list of users
+- 📤 **File Upload**
+  - POST `/api/upload-zip` - Upload ZIP files
+- 🏥 **Health**
+  - GET `/health` - Service health check
+
+#### Features
+- Interactive API testing interface
+- Request/response schema documentation
+- Authentication flow demonstration
+- Sample request bodies
+- Response code descriptions
+- Rate limit information
+
+To use Swagger UI:
+1. Start the server: `python run.py`
+2. Visit `http://localhost:8000/docs` in your browser
+3. Authenticate using the `/token` endpoint
+4. Test other endpoints with the received JWT token
+

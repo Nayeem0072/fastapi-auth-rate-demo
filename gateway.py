@@ -14,7 +14,20 @@ from jose import JWTError, jwt
 import aiofiles
 import os
 
-app = FastAPI(title="API Gateway")
+app = FastAPI(
+    title="API Gateway Service",
+    description="""
+    A robust API Gateway service with the following features:
+    * 🔒 JWT Authentication
+    * ⏱️ Rate Limiting (10 requests per minute)
+    * 📤 Secure ZIP File Upload
+    * 🔄 Backend Service Proxying
+    * 🛡️ Protected Endpoints
+    """,
+    version="1.0.0",
+    docs_url="/docs",   # Swagger UI endpoint
+    redoc_url=None      # Disable ReDoc
+)
 
 # Pydantic models for request/response validation
 class User(BaseModel):
@@ -84,7 +97,11 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 def get_client_id(request: Request) -> str:
     return request.client.host
 
-@app.get("/health", response_model=HealthResponse)
+@app.get("/health", 
+    response_model=HealthResponse,
+    tags=["Health"],
+    summary="Check service health"
+)
 async def health_check():
     """Gateway health check endpoint"""
     return HealthResponse(
@@ -111,9 +128,17 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> UserInDB:
         raise credentials_exception
     return user
 
-@app.post("/token", response_model=Token)
+@app.post("/token", 
+    response_model=Token,
+    tags=["Authentication"],
+    summary="Login for access token"
+)
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
-    """Endpoint to get JWT token"""
+    """
+    Get JWT access token with:
+    - **username**: Your username
+    - **password**: Your password
+    """
     user = authenticate_user(form_data.username, form_data.password)
     if not user:
         raise HTTPException(
@@ -128,13 +153,22 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
-@app.get("/api/users", response_model=List[User])
+@app.get("/api/users", 
+    response_model=List[User],
+    tags=["Users"],
+    summary="Get all users",
+    responses={
+        429: {"description": "Rate limit exceeded"},
+        401: {"description": "Unauthorized"}
+    }
+)
 async def get_users(
     request: Request,
     current_user: UserInDB = Depends(get_current_user)
 ):
     """
-    Get users endpoint with rate limiting and authentication
+    Get list of users with rate limiting and authentication.
+    Rate limit: 10 requests per minute per client.
     """
     client_id = get_client_id(request)
     is_limited, rate_limit_info = rate_limiter.is_rate_limited(client_id)
@@ -163,13 +197,25 @@ async def get_users(
             detail=f"Backend service error: {str(exc)}"
         )
 
-@app.post("/api/upload-zip", status_code=201)
+@app.post("/api/upload-zip", 
+    status_code=201,
+    tags=["File Upload"],
+    summary="Upload ZIP file",
+    responses={
+        201: {"description": "Successfully uploaded"},
+        400: {"description": "Invalid file type"},
+        401: {"description": "Unauthorized"}
+    }
+)
 async def upload_zip(
-    file: UploadFile = File(...),
+    file: UploadFile = File(..., description="ZIP file to upload"),
     current_user: UserInDB = Depends(get_current_user)
 ):
     """
-    Upload ZIP file to backend service
+    Upload a ZIP file with the following requirements:
+    - File must have .zip extension
+    - Authentication required
+    - Returns upload details including filename, size, and timestamp
     """
     if not file.filename.endswith('.zip'):
         raise HTTPException(
