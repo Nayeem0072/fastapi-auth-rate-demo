@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Request, Depends, status
+from fastapi import FastAPI, HTTPException, Request, Depends, status, File, UploadFile
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 import httpx
 from pydantic import BaseModel, Field
@@ -11,6 +11,8 @@ from auth_utils import (
     ACCESS_TOKEN_EXPIRE_MINUTES, SECRET_KEY, ALGORITHM
 )
 from jose import JWTError, jwt
+import aiofiles
+import os
 
 app = FastAPI(title="API Gateway")
 
@@ -155,6 +157,38 @@ async def get_users(
             response = await client.get(f"{BACKEND_SERVICE_URL}/users")
             response.raise_for_status()
             return response.json()
+    except httpx.RequestError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail=f"Backend service error: {str(exc)}"
+        )
+
+@app.post("/api/upload-zip", status_code=201)
+async def upload_zip(
+    file: UploadFile = File(...),
+    current_user: UserInDB = Depends(get_current_user)
+):
+    """
+    Upload ZIP file to backend service
+    """
+    if not file.filename.endswith('.zip'):
+        raise HTTPException(
+            status_code=400,
+            detail="Only ZIP files are allowed"
+        )
+    
+    try:
+        # Create form-data with the file
+        files = {'file': (file.filename, file.file, 'application/zip')}
+        
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                f"{BACKEND_SERVICE_URL}/upload-zip",
+                files=files
+            )
+            response.raise_for_status()
+            return response.json()
+            
     except httpx.RequestError as exc:
         raise HTTPException(
             status_code=503,

@@ -1,6 +1,6 @@
 # API Gateway with Rate Limiting and Authentication
 
-A FastAPI-based API Gateway implementation featuring rate limiting, JWT authentication, and request proxying to backend services.
+A FastAPI-based API Gateway implementation featuring rate limiting, JWT authentication, file upload, and request proxying to backend services.
 
 ## Features
 
@@ -8,6 +8,7 @@ A FastAPI-based API Gateway implementation featuring rate limiting, JWT authenti
 - ⏱️ Rate Limiting (10 requests per minute per client)
 - 🔄 Request Proxying
 - 🛡️ Protected Endpoints
+- 📤 File Upload Support
 - 🧪 Comprehensive Testing Suite
 
 
@@ -63,6 +64,11 @@ python run.py
   - Rate limited (10 requests/minute)
   - Returns list of users
 
+- `POST /api/upload-zip`
+  - Requires JWT authentication
+  - Upload ZIP files
+  - Returns upload details including filename, size, and timestamp
+
 ### Health Check
 - `GET /health`
   - Service health status
@@ -78,6 +84,15 @@ This will test:
 1. Unauthorized access
 2. Invalid token access
 3. Rate limiting with valid authentication
+
+### File Upload Testing
+```bash
+python test_upload.py
+```
+Test file upload functionality with:
+1. Authentication check
+2. ZIP file validation
+3. Upload success verification
 
 ## Response Headers
 
@@ -121,4 +136,16 @@ To modify rate limits or add new features:
 ## License
 
 MIT License
+
+## File Upload Configuration
+
+The backend service stores uploaded files in:
+- Upload directory: `uploads/` (created automatically)
+- Files are renamed with timestamp prefix for uniqueness
+- Only ZIP files are accepted
+- Upload response includes:
+  - Filename
+  - File size
+  - Upload timestamp
+  - Upload status
 
